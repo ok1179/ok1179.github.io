@@ -1,0 +1,602 @@
+@charset "utf-8";
+
+/* **************************************************
+
+ File Name   :module.css
+ Author      :
+ Description :コンテンツエリア設定
+
+ content
+  共通クラス
+  トップ
+  ポップアップ
+  くらべる／グラフでみる
+	くらべる
+    グラフでみる
+  ダウンロード
+  お客様情報
+
+***************************************************** */
+
+
+/* 共通クラス
+===================================================== */
+sub.lwr {
+	font-size: 70%;
+}
+
+/* .naviHidden
+----------------------------------------------------- */
+.naviHidden {
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 100;
+	width: 0px;
+	height: 0px;
+	overflow: hidden;
+}
+
+/* 見出し
+----------------------------------------------------- */
+div#contentHeader {
+	position: relative;
+	margin-bottom: 10px;
+}
+div#contentHeader p.Img {
+	float: left;
+	width: 93px;
+	margin-right: 20px;
+	font-size: 0;
+	line-height: 0;
+}
+div#contentHeader p.Img img.headImg {
+	display: block;
+	margin-bottom: 4px;
+	border: 2px solid #FFF;
+}
+div#contentHeader h2 {
+	float: left;
+}
+div#contentHeader p.thumbNail {
+	float: left;
+}
+
+/* input画像
+----------------------------------------------------- */
+p.inputImage,
+p.inputImage input {
+	margin: 0;
+	padding: 0;
+	font-size: 0;
+	line-height: 0;
+}
+p.textImage {
+	margin-bottom: 15px;
+	font-size: 0;
+	line-height: 0;
+}
+p.textStyle {
+	margin-bottom: 15px;
+	font-size: 14px;
+}
+
+/* 数値
+----------------------------------------------------- */
+.numTxt {
+	display: inline-block;
+	margin-right: 0.2em;
+	font-size: 100%;
+	line-height: 100%;
+	font-family:Arial, Helvetica, sans-serif;
+	vertical-align: bottom;
+	letter-spacing: -0.02em;
+}
+
+
+/* リスト縦並び
+----------------------------------------------------- */
+ul.verticalList { margin: 0 0 -3px; }
+ul.verticalList li { margin: 0 0 3px; }
+ul.verticalList li input {
+	display: inline;
+	vertical-align: middle;
+}
+
+/* リスト横並び
+----------------------------------------------------- */
+ul.horizontalList li {
+    display: inline;
+	margin: 0 10px 2px 0;
+}
+/* for IE7 & IE6 lower */
+* html ul.horizontalList li { white-space: nowrap }
+*:first-child+html ul.horizontalList li { white-space: nowrap }
+/* */
+ul.horizontalList li label { white-space: nowrap; }
+
+ul.horizontalList li img {
+	vertical-align: middle;
+}
+ul.horizontalList li input,
+ul.horizontalList li select {
+	display: inline-block;
+	margin: 0 6px 2px 0;
+	vertical-align: middle;
+}
+
+
+/* トップ（関係をみる）
+===================================================== */
+div#Contents.topPage {
+	background-image: url('../images/common/bg_main_top.jpg');
+}
+
+/* お得金額／売った電力／買った電力…
+----------------------------------------------------- */
+dl.relationBlock {
+	position: absolute;
+}
+dl.relationBlock dt {
+}
+dl.relationBlock dd {
+	width: 82px;
+	height: 20px;
+	font-weight: bold;
+	font-size: 15px;
+	text-align: right;
+	vertical-align: baseline;
+	white-space: nowrap;
+}
+dl#rValue {
+	top: 58px;
+	left: 225px;
+}
+dl#rEPG {
+	top: 140px;
+	left: 524px;
+}
+dl#rValue dd {
+	font-size: 18px;
+	text-align: left;
+}
+dl#rSell {
+	top: 200px;
+	left: 250px;
+}
+dl#rBuy {
+	top: 300px;
+	left: 205px;
+}
+
+dl#rEPGsub {
+	top: 126px;
+	left: 720px;
+	font-size: 14px;
+}
+dl#rEPGsub dt {
+	padding-top: 6px;
+	font-weight: bold;
+}
+dl#rEPGsub dd {
+	width: 94px;
+	margin: -1.25em 0 0 50px;
+	font-size: 14px;
+}
+dl#rCO2 {
+	top: 232px;
+	left: 719px;
+}
+dl#rConsumption {
+	top: 321px;
+	left: 719px;
+}
+dl#rSell dd.lv2,
+dl#rBuy dd.lv2 {
+	width: 165px;
+	height: 20px;
+	padding-top: 2px;
+	font-size: 12px;
+	text-align: right;
+}
+dl#rSell dd.lv2 .numTxt,
+dl#rBuy dd.lv2 .numTxt {
+	font-size: 130%;
+	letter-spacing: normal;
+}
+
+/* 補足事項
+----------------------------------------------------- */
+ul.topNote {
+	position: absolute;
+	top: 400px;
+	left: 35px;
+}
+ul.topNote li {
+	margin-bottom: 1px;
+	font-size: 0;
+	line-height: 0;
+}
+
+/* リアルタイム値
+----------------------------------------------------- */
+div.topButtonArea {
+	position: absolute;
+	top: 394px;
+	left: 772px;
+}
+div.topButtonArea input {
+	margin-bottom: 3px;
+}
+
+
+/* ポップアップ（リアルタイム値）
+===================================================== */
+div#PopUpContents div#contentHeader {
+	position: relative;
+	padding: 18px 0 0 23px;
+	text-align: left;
+}
+div#PopUpContents div#contentHeader h1 {
+	margin-bottom: 5px;
+	font-size: 0;
+	line-height: 0;
+}
+div#PopUpContents dl#rEPG {
+	top: 112px;
+	left: 165px;
+}
+div#PopUpContents dl#rSell {
+	top: 167px;
+	left: 165px;
+}
+div#PopUpContents dl#rBuy {
+	top: 221px;
+	left: 165px;
+}
+div#PopUpContents dl#rConsumption {
+	top: 274px;
+	left: 165px;
+}
+div#PopUpContents dl#rUse {
+	top: 328px;
+	left: 165px;
+}
+div#PopUpContents p.inputImage {
+	position: absolute;
+	left: 83px;
+	bottom: 8px;
+}
+div#PopUpContents dl#btn_l {
+	top: 14px;
+	left: 20px;
+}
+div#PopUpContents dl#btn_r {
+	top: 14px;
+	left: 145px;
+}
+
+
+/* くらべる／グラフでみる
+===================================================== */
+div#PosL {
+	float: left;
+}
+div#PosR {
+	float: right;
+}
+
+/* 共通：中央セレクトbox
+----------------------------------------------------- */
+div.selectBox {
+	display: inline-block;
+	position: absolute;
+	top: 90px;
+	left: 175px;
+	height: 39px;
+	margin-bottom: 4px;
+	padding-right: 5px;
+	background: #FFF url('../images/form_box_select_r.gif') right top no-repeat;
+	text-align: center;
+}
+div.selectBox .inner {
+	height: 31px;
+	min-width: 545px;
+/* for IE 4-6 */
+	_width: 545px;
+/* */
+	padding: 8px 0 0 5px;
+	background: url('../images/form_box_select_l.gif') left top no-repeat;
+}
+
+div.mainArea {
+	width: 806px;
+	margin: 0 auto;
+	vertical-align: top;
+	text-align: center;
+}
+p.graphImage {
+	margin: 0;
+	padding: 0;
+	font-size: 0;
+	line-height: 0;
+}
+
+
+/* くらべる：グラフ配置用box
+----------------------------------------------------- */
+div.column3Set {
+	margin-top: 7px;
+	padding-bottom: 10px;
+	background: url('../images/box_ss_bottom.gif') left bottom no-repeat;
+}
+div.column3Set div.boxStyleS{
+	width: 346px;
+	min-height: 272px;
+/* for IE 4-6 */
+	_height: 272px;
+/* */
+	padding-top: 10px;
+	background: #FFF url('../images/box_ss_top.gif') left top no-repeat;
+}
+div.column3Set div.boxStyleS .inner{
+	padding: 0 8px;
+	text-align: center;
+}
+div.column3Set div.boxStyleS ul.horizontalList {
+	margin-bottom: 7px;
+}
+div.column3Set div.boxStyleS p.graphImage {
+	margin-bottom: 8px;
+}
+div.column3Set div.boxStyleS p.pwr {
+	font-weight: bold;
+	font-size: 16px;
+	text-align: right;
+}
+div.column3Set div.boxInput{
+	float: left;
+	width: 114px;
+	padding-top: 105px;
+	text-align: center;
+}
+
+
+/* グラフでみる：グラフ配置用box
+----------------------------------------------------- */
+div.boxStyleL{
+	position: relative;
+	width: 806px;
+	margin: 0 auto 4px;
+	padding-bottom: 8px;
+	background: #FFF url('../images/box_l_bottom.gif') left bottom no-repeat;
+}
+div.boxStyleL .inner{
+	padding: 6px 7px 0 12px;
+	background: url('../images/box_l_top.gif') left top no-repeat;
+}
+div.boxStyleL p.graphImage {
+	text-align: right;
+}
+div#PosB.boxStyleL{
+	margin-bottom: 0;
+	background-image: url('../images/box_l_bottom2.gif');
+}
+div.boxStyleL ul.verticalList {
+	position: absolute;
+	left:7px;
+	z-index: 100;
+	font-size: 0;
+	line-height: 0;
+}
+div#PosT.boxStyleL ul.verticalList {
+	top: 37px;
+}
+div#PosB.boxStyleL ul.verticalList {
+	top: 53px;
+}
+
+/* ダウンロード（width:486、height:275px）
+===================================================== */
+div.mainArea div.boxStyleM{
+	width: 486px;
+	min-height: 265px;
+/* for IE 4-6 */
+	_width: 486px;
+	_height: 265px;
+/* */
+}
+
+div.boxStyleM{
+	margin: 0 auto;
+	padding-bottom: 10px;
+	background: #FFF url('../images/box_m_bottom.gif') left bottom no-repeat;
+}
+div.boxStyleM .inner{
+	padding-top: 26px;
+	background: url('../images/box_m_top.gif') left top no-repeat;
+	text-align: center;
+}
+div.boxStyleM ul.horizontalList {
+	margin-bottom: 17px;
+}
+div.boxStyleM p.inputImage {
+	margin-bottom: 20px;
+}
+
+table.downloadTable {
+	margin: 0 auto 20px auto;
+}
+table.downloadTable th,
+table.downloadTable td {
+	text-align: left;
+	vertical-align: top;
+}
+table.downloadTable th {
+	padding: 4px 6px 0 0;
+}
+table.downloadTable td {
+	padding-bottom: 14px;
+}
+table.downloadTable ul.horizontalList {
+	margin-bottom: 8px;
+}
+
+/* お客様情報（h:275px- 37px(h2) w:386px）
+===================================================== */
+div.column2Set {
+	position: relative;
+	padding-bottom: 9px;
+	background: url('../images/box_s_bottom.gif') left bottom no-repeat;
+}
+div.column2Set div.boxStyleS {
+	width: 386px;
+	min-height: 266px;
+/* for IE 4-6 */
+	_height: 266px;
+/* */
+}
+div.column2Set div.boxStyleS h3 {
+	font-size: 0;
+	line-height: 0;
+}
+div.column2Set div.boxStyleS .inner {
+	padding: 0 12px 0 20px;
+	background-color: #FFF;
+	text-align: center;
+	overflow:hidden;
+}
+div.column2Set div.boxStyleS p.inputImage input {
+/*	position: absolute;
+	left: 140px;
+	bottom: 9px; */
+}
+table.infoTable,
+table.infoInputTable {
+	font-size: 14px;
+}
+table.infoTable {
+	margin: 13px auto 15px;
+}
+table.infoInputTable {
+/*	margin: 5px auto 5px 0; */
+	margin: 5px auto 5px;
+}
+table.infoTable th,
+table.infoTable td {
+	padding: 7px 0;
+	line-height:1.1;
+	vertical-align: middle;
+}
+table.infoInputTable th,
+table.infoInputTable td {
+	padding: 2px 0;
+	line-height:1.1;
+	vertical-align: middle;
+}
+table.infoTable th,
+table.infoInputTable th {
+	padding-right: 10px;
+	text-align: right;
+}
+table.infoTable td,
+table.infoInputTable td {
+	text-align: left;
+	font-weight: bold;
+}
+table.infoInputTable input {
+	display: block;
+	width:173px;
+/* for IE */
+	*margin: -1px 0;
+/* */
+}
+table.infoInputTable select {
+	width:177px;
+}
+/* for IE6 */
+* html div#PosL .overHidden  {
+	display: block;
+	width: 185px;
+	overflow:hidden;
+ }
+/* */
+
+table.infoDataTable {
+	margin: 0 auto;
+	font-size: 14px;
+}
+table.infoDataTable th,
+table.infoDataTable td {
+	width: 25%;
+	padding: 6px 15px;
+	border: solid 1px #333;
+	text-align: center;
+}
+
+
+/* パスワードを忘れた方はこちら W:486px H:275px
+===================================================== */
+div.remindPage {
+	width: 900px !important;
+	height: 448px !important;
+	margin: 0 auto 32px auto !important;
+	padding: 1px 0 !important;
+	background: #FFF url('../images/common/bg_main_reminder.jpg') left top no-repeat !important;
+	text-align: center !important;
+}
+
+div.remindPage div.boxStyleM{
+	display: inline-block;
+	min-width: 476px;
+/* for IE 4-6 */
+	_width: 476px;
+/* */
+	height: 275px;
+	margin: 94px auto 0;
+	padding: 0 10px 0 0 ;
+	background: #FFF url('../images/box_m_right.gif') right top no-repeat;
+}
+div.remindPage div.boxStyleM .inner{
+	height: 205px;
+	padding: 70px 0 0 10px;
+	background: url('../images/box_m_left.gif') left top no-repeat;
+}
+
+div.remindPage table.infoTable {
+	margin: 12px auto 20px auto;
+}
+div.remindPage p.remind {
+	margin: 12px auto 60px auto;
+}
+
+
+/* 共通クラス（回り込みを解除）
+===================================================== */
+
+div#contentHeader:after,
+ul.horizontalList:after,
+div.column2Set:after,
+div.column3Set:after {
+	display: block;
+	clear: both;
+	height: 0;
+	visibility: hidden;
+	content: "";
+}
+div#contentHeader,
+ul.horizontalList,
+div.column2Set,
+div.column3Set { display: inline-block; }
+
+/* Hides from IE-mac \*/ 
+* html div#contentHeader,
+* html ul.horizontalList,
+* html div.column2Set,
+* html div.column3Set { height: 1%; }
+
+div#contentHeader,
+ul.horizontalList,
+div.column2Set,
+div.column3Set { display: block; } 
+/* End hide from IE-mac */

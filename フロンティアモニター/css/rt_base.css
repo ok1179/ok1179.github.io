@@ -1,0 +1,65 @@
+@charset "utf-8";
+
+/* **************************************************
+
+ File Name   :default.css
+ Author      :
+ Description :初期設定
+ 
+***************************************************** */
+
+/* リセット
+===================================================== */
+* {
+	margin: 0;
+	padding: 0;
+}
+
+/* 初期設定
+===================================================== */
+html {
+	overflow-y: scroll;
+}
+body {
+	margin: 0 auto;
+	color: #333;
+	font-size: 12px;
+	line-height: 100%;
+	font-family:"ＭＳ Ｐゴシック", "MS PGothic", "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "メイリオ", Meiryo, Osaka, sans-serif;
+	text-align: center;
+	vertical-align: top;
+}
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+img,fieldset {
+	border: 0;
+}
+img {
+	font-size: 0;
+	line-height: 0;
+}
+li { list-style-type: none; }
+strong { font-weight: bold; }
+em { font-style: italic; }
+
+sub {
+	margin: auto 1px auto;
+	font-size: 92.2%;
+	vertical-align: -0.12em;
+	line-height: 100%;
+}
+/* Win IE7 & IE6 lower */
+* html body sub { font-size: 105%; }
+*:first-child+html body sub { font-size: 105%; }
+/* */
+
+/* リンク設定
+===================================================== */
+a {
+	text-decoration: none;
+}
+a:hover {
+	text-decoration: underline;
+}

@@ -1,0 +1,277 @@
+@charset "utf-8";
+
+/* **************************************************
+
+ File Name   :layout.css
+ Author      :
+ Description :ページレイアウト設定（ヘッダー、フッター）
+
+ content
+  基本設定、横幅設定など
+  ヘッダー
+  ナビゲーション（上）
+  ナビゲーション（下）
+  コンテンツエリア
+  フッター
+  ポップアップ
+  共通クラス
+
+***************************************************** */
+
+/* 基本設定、横幅設定など
+===================================================== */
+div#Container {
+}
+div#Header,
+div#TopNavi,
+div#Contents,
+div#BottomNavi,
+div#Footer {
+	margin: 0 auto;
+	width: 900px;
+}
+div#Container2 {
+	margin: 0 auto;
+	width: 256px;
+}
+div#PopUpContents {
+	margin: 0 auto;
+	width: 256px;
+}
+/* ヘッダー
+===================================================== */
+div#Header {
+	margin-top: 15px;
+	margin-bottom: 13px;
+	text-align: left;
+}
+div#Header div#SiteID {
+	float: left;
+}
+div#Header div#SiteID h1 {
+	margin-bottom: 18px;
+	font-size: 0;
+	line-height: 0;
+}
+div#Header div#SiteID p#Visitor {
+	margin-left: 5px;
+	font-weight: bold;
+	font-size: 16px;
+	line-height: 100%;
+	text-align: left;
+	vertical-align: baseline;
+}
+div#Header p.corpLogo {
+	float: right;
+}
+
+
+/* ナビゲーション（上）
+===================================================== */
+div#TopNavi {
+	border-bottom: 7px solid #000;
+}
+div#TopNavi ul.utilityNavi {
+	float: right;
+	padding: 6px 0 0 0;
+	text-align: right;
+}
+div#TopNavi ul.utilityNavi li {
+	float: left;
+	margin: 0 0 0 7px;
+}
+div#TopNavi ul#GlobalNavi {
+	float: left;
+	padding: 0 0 0 9px;
+	height: 38px;
+	overflow: hidden;
+}
+div#TopNavi ul#GlobalNavi li {
+	float: left;
+	margin: 0 2px 0 0;
+}
+
+/* ナビゲーション（下）
+===================================================== */
+div#BottomNavi {
+	margin-bottom: 13px;
+}
+div#BottomNavi #Mobile {
+	float: left;
+	width: 354px;
+	min-height: 46px;
+/* for IE 4-6 */
+	_height: 46px;
+/* */
+	padding-left: 48px;
+	background: #EEE url('../images/common/mobile_img.gif') 16px 4px no-repeat;
+	text-align: left;
+}
+div#BottomNavi #Mobile fieldset {
+	margin: 5px 0 4px 0;
+}
+div#BottomNavi #Mobile legend {
+	display: block;
+	padding-bottom: 2px;
+	text-align: left;
+	vertical-align: top;
+	font-size: 0;
+	line-height: 0;
+}
+div#BottomNavi #Mobile p {
+	font-size: 12px;
+}
+div#BottomNavi #Mobile p input,
+div#BottomNavi #Mobile p select {
+	vertical-align: middle;
+	line-height:1.3;
+}
+div#BottomNavi #Mobile p input#MailAddress,
+div#BottomNavi #Mobile p select {
+	width: 130px;
+}
+/* for IE7 & IE6 lower */
+*:first-child + html div#BottomNavi #Mobile input#MailAddress {
+	padding: 1px;
+}
+/* */
+div#BottomNavi ul.guideNavi {
+	float: right;
+	width: 498px;
+	height: 46px;
+	text-align: right;
+	overflow: hidden;
+}
+div#BottomNavi ul.guideNavi li {
+    display:table-cell;
+ 	padding-left: 8px;
+
+/* for IE */
+    *display:inline;
+    *zoom:1;
+/* */
+}
+
+/* ナビゲーション共通
+----------------------------------------------------- */
+div#TopNavi ul,
+div#BottomNavi ul {
+	font-size: 0;
+	line-height: 0;
+}
+
+
+/* コンテンツエリア（width:900、height:445px）
+===================================================== */
+div#Contents {
+	position: relative;
+	clear: both;
+	width: 856px;
+	min-height: 418px;
+/* for IE 4-6 */
+	_height: 418px;
+/* */
+	margin-bottom: 13px;
+	padding: 14px 22px 13px;
+	background: #2287DF url('../images/common/bg_main.jpg') left bottom no-repeat;
+	text-align: left;
+}
+/* ポップアップコンテンツエリア（width:256、height:369px）
+===================================================== */
+div#PopUpContents {
+	position: relative;
+	clear: both;
+	width: 256px;
+	min-height: 347px;
+	/* for IE 4-6 */
+	_height: 360px;
+	padding: 10px 0px 0px;
+	background: #2287DF url('../images/common/pop_bg.jpg') center bottom no-repeat;
+	text-align: left;
+}
+/* フッター
+===================================================== */
+div#Footer {
+}
+div#Footer h2 {
+	position: absolute;
+	top: -9999px;
+	left: -9999px;
+}
+div#Footer ul {
+	padding: 7px 0;
+	background-color: #000;
+	font-size: 12px;
+	text-align: right;
+}
+div#Footer ul li {
+	display: inline;
+	min-height: 13px;
+	margin: 0 9px 0 0;
+	padding: 0 0 0 22px;
+	border-left: 1px solid #FFF;
+	background: url('../images/common/icon_link_r.gif') 10px top no-repeat;
+}
+div#Footer ul li.pageTopNavi {
+	padding: 0 0 0 27px;
+	background-image: url('../images/common/icon_pagetop.gif');
+}
+div#Footer ul li.firstItem {
+	border: none;
+}
+div#Footer ul a {
+	color: #FFF;
+}
+
+div#Footer p.copyright {
+	padding-top: 10px;
+	color: #666;
+	font-size: 12px;
+	font-family: Tahoma, Geneva, sans-serif;
+	line-height: 1.2;
+	text-align: center;
+	vertical-align: baseline;
+}
+
+/* ポップアップ
+===================================================== */
+div#PopUpContents {
+	position: relative;
+	width: 256px;
+	height: 387px;
+	background: url('../images/common/pop_bg.jpg') left top no-repeat;
+}
+div#PopUpFooter {
+	width: 100%;
+	background-color: #000;
+}
+
+/* 共通クラス（回り込みを解除）
+===================================================== */
+
+div#Header:after,
+div#TopNavi:after,
+div#BottomNavi:after,
+div#Footer:after {
+	display: block;
+	clear: both;
+	height: 0;
+	visibility: hidden;
+	content: "";
+}
+div#Header,
+div#TopNavi,
+div#BottomNavi,
+div#Footer { display: inline-block; }
+
+/* Hides from IE-mac \*/ 
+* html div#Header,
+* html div#TopNavi,
+* html div#BottomNavi,
+* html div#Footer { height: 1%; }
+
+div#Header,
+div#TopNavi,
+div#BottomNavi,
+div#Footer { display: block; } 
+/* End hide from IE-mac */

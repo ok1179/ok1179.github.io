@@ -1,0 +1,348 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!-- saved from url=(0046)https://www.frontier-monitor.com/persite/C0400 -->
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ja" xml:lang="ja" dir="ltr"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta http-equiv="pragma" content="no-cache">
+<meta http-equiv="cache-control" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+<meta name="robots" content="index,follow">
+<meta name="robots" content="noodp">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<meta http-equiv="Content-Script-Type" content="text/javascript">
+<title>フロンティアモニター  - ホームエネルギーモニタリングサービス -</title>
+<meta name="Keywords" content="">
+<meta name="Description" content="">
+<link rel="index start" href="https://www.frontier-monitor.com/persite/index.html" title="ホーム">
+<link href="./フロンティアモニター/css/rt_import.css" rel="stylesheet" type="text/css" media="all">
+<script src="./フロンティアモニター/js/jquery-1.5.1.min.js" type="text/javascript"></script>
+<script src="./フロンティアモニター/js/jquery.scrollTo-1.4.2-min.js" type="text/javascript"></script>
+<script src="./フロンティアモニター/js/jquery.rollover.js" type="text/javascript"></script>
+<script src="./フロンティアモニター/js/init.js" type="text/javascript"></script>
+<script src="./フロンティアモニター/js/validator.js" type="text/javascript"></script>
+<script src="./フロンティアモニター/js/prepform.js" type="text/javascript"></script>
+<script type="text/javascript">
+
+//更新処理
+var update;
+//更新処理失敗回数
+var sendErrorCount = 0;
+//通信中フラグ
+var isConnecting = 0;
+//接続先IP配列
+var urls ='192.168.1.7'.split(';');
+
+$(function(){
+	initHttpsUrl('https://www.frontier-monitor.com/persite'); //httpsurlをhidden項目で追加
+	prepFormSmall();
+
+	//インターバル
+	//var timerInterval = 1 * 1000;
+
+	//画面定期更新関数定義
+	update = function(status , target) {
+
+
+		if (target == null) target = 0;
+		//alert(status + " " + target);
+		//var homeSvrUrl = '192.168.1.7';
+		//var homeSvrUrl = getHomeSvrUrl();
+
+		var homeSvrUrl= urls[target];
+
+		if( homeSvrUrl == "") {
+			//セッションエラー、ローカルアドレス取得エラー時
+			doErr(target);
+			return;
+		}else{
+			homeSvrUrl = "http://" + homeSvrUrl + "/GetMonitoringData.cgi";
+			//alert(homeSvrUrl);
+		}
+
+		var now = new Date();
+
+		var timerout_ = 5 * 1000;
+
+		$.ajax({
+			type : 'POST',
+			url  : homeSvrUrl,
+			timeout : timerout_,
+			data : {
+				  "time" : now.getTime()
+			},
+			dataType : "jsonp",
+			jsonpCallback : "getAdded_Power",
+			success : function(data) {
+				doView(target , data);
+			},
+			error : function(XMLHttpRequest, textStatus, errorThrown) {
+				doErr(target);
+			}
+		});
+	};
+
+	try{
+		//インターバルタイマ起動
+		//timerID = setInterval(update, timerInterval);
+		isConnecting = 1;
+		update("load", 0);
+	}catch( e ){
+		doErr();
+	}
+});
+
+function doView(targetIndex , data)
+{
+	var hatsudenkw = data.added_power;
+	var uttakw = data.added_sellpower;
+	var kattakw = data.added_buypower;
+	var ZERO_FMT = "0.00";
+
+	if((hatsudenkw != "") && (hatsudenkw != null)){
+		hatsuden = roundOff(hatsudenkw);
+		$("#hatsudenkw") .html(hatsuden);
+	}else{
+		$("#hatsudenkw") .html(ZERO_FMT);
+		hatsudenkw = 0;
+	}
+
+	if((uttakw != "") && (uttakw != null)){
+		utta = roundOff(uttakw);
+		$("#uttakw") .html(utta);
+
+	  	/* 20120405 dell HKE K.Muraishi
+		if(parseFloat(utta) > 0) { // 2012/03/15 chiba
+    		$("#blinking").attr("src", "./フロンティアモニター/images/blink4moment.gif"); //表示枠点滅あり
+    	} else {
+    		$("#blinking").attr("src", "./フロンティアモニター/images/clear.gif"); //表示枠点滅なし
+    	}
+	  	*/
+
+	}else{
+		$("#uttakw") .html(ZERO_FMT);
+		uttakw = 0;
+
+		// $("#blinking").attr("src", "./フロンティアモニター/images/clear.gif"); //表示枠点滅なし	//20120405 del HKE K.Muraishi
+	}
+
+	if((kattakw != "") && (kattakw != null)){
+		katta = roundOff(kattakw);
+		$("#kattakw") .html(katta);
+	}else{
+		$("#kattakw") .html(ZERO_FMT);
+		kattakw = 0;
+	}
+
+	// 売っている電力点滅	//20120405 add K.Muraishi
+	if(parseFloat(utta) > parseFloat(katta)) {
+		$("#blinking").attr("src", "./フロンティアモニター/images/blink4moment.gif"); //表示枠点滅あり
+	} else {
+		$("#blinking").attr("src", "./フロンティアモニター/images/clear.gif"); //表示枠点滅なし
+	}
+
+
+	if((hatsudenkw == 0) && (uttakw == 0) && (kattakw == 0)){
+		$("#shohikw") .html(ZERO_FMT);
+	}else{
+		var shohikw = syohi(hatsudenkw, uttakw, kattakw);
+		$("#shohikw") .html(shohikw  );
+	}
+
+	if((data.added_power == "") && (data.added_sellpower == "")){
+		$("#shiyokw") .html(ZERO_FMT);
+	}else{
+		var shiyokw = shiyo(hatsudenkw, uttakw);
+		$("#shiyokw") .html(shiyokw  );
+	}
+
+	//2011/04/22 add hamano
+    if ($("#autoRef").val() == "1")
+   	{
+    	var timerInterval = 1 * 1000;
+    	timerID = setTimeout(update, timerInterval);
+   	}
+
+	isConnecting = 0;
+
+}
+
+function syohi(hatsudenkw, uttakw, kattakw)
+{
+	//発電電力量－売電力量＋買電力量
+	var hatsu = parseFloat(hatsudenkw);
+	var uri = parseFloat(uttakw);
+	var kai = parseFloat(kattakw);
+
+	var syohi = hatsu - uri + kai;
+	syohi = roundOff(syohi);
+
+	return syohi;
+}
+
+function shiyo(hatsudenkw, uttakw)
+{
+	//発電電力量－売電力量
+	var hatsu = parseFloat(hatsudenkw);
+	var uri = parseFloat(uttakw);
+
+	var shiyo = hatsu - uri;
+	shiyo = roundOff(shiyo);
+
+	return shiyo;
+}
+
+function doErr(targetIndex)
+{
+	$("#hatsudenkw") .html("－");
+	$("#uttakw") .html("－");
+	$("#kattakw") .html("－");
+	$("#shohikw") .html("－");
+	$("#shiyokw") .html("－");
+
+//2011/04/21 add hamano start
+
+
+	//次のIPに即座にアクセス
+	//------------------------------------------------
+	targetIndex ++ ;
+	if (targetIndex < urls.length)
+	{
+		update("retry" , targetIndex);
+		return;
+	}
+
+	//自動更新ONの場合3回リトライ　3回失敗した場合自動更新をOFFにする
+	//----------------------------------------------------
+	if ($("#autoRef").val() == "1")
+	{
+		sendErrorCount++;
+		if ( sendErrorCount < 3 )
+		{
+	    	var timerInterval = 1 * 1000;
+	    	setTimeout(update, timerInterval);
+	    	return;
+		}
+		else
+		{
+		    chgAutoRef();
+		}
+	}
+
+	isConnecting = 0;
+
+//2011/04/21 add hamano end
+}
+
+
+function roundOff(n){
+	var val = new Number(n);
+	val = val * 100;
+	val = val / 1000;// 2011/06/27 mod hamano Kwに変更のため　さらに1000で除算
+	val = Math.round(val);
+	val = val / 100;
+	val = val.toFixed(2);
+
+	return val;
+}
+
+/**
+ * 自動更新切替
+ */
+function chgAutoRef()
+{
+	//自動更新ボタンON、OFF画像定義
+	var bton_  = './フロンティアモニター/images/auto_on.png';
+	var btoff_ = './フロンティアモニター/images/auto_off.png';
+
+    if ($("#autoRef").val() == "1")
+   	{
+    	$("#autoRef").val("0");
+    	$("#btn_r_img").attr("src" , btoff_ );
+   	}
+    else
+   	{
+    	$("#autoRef").val("1");
+    	$("#btn_r_img").attr("src" , bton_ );
+    	//リトライ回数をリセット
+
+    	if (isConnecting == 0)
+    	{
+    		isConnecting = 1;
+    		sendErrorCount = 0;
+    		update('autoon' , 0);
+    	}
+   	}
+}
+
+function updateManual()
+{
+	if (isConnecting == 0)
+	{
+		isConnecting = 1;
+		update('manual' , 0);
+	}
+}
+
+</script>
+</head>
+<body>
+<div id="Container2">
+<div id="PopUpContents">
+<form action="https://www.frontier-monitor.com/persite/$action$">
+<input type="hidden" id="autoRef" name="autoRefresh" value="1">
+<dl class="relationBlock" id="btn_l">
+<dd><a href="javascript:updateManual()"><img src="./フロンティアモニター/images/manu_in.png" width="90" height="26"></a></dd>
+<!-- / #btn--></dl>
+
+<!-- 点滅画像 -->
+<span style="position:absolute; top:94px; left:4px;">
+ 	<img id="blinking" src="./フロンティアモニター/images/blink4moment.gif" width="247" height="48">
+</span>
+
+<dl class="relationBlock" id="btn_r">
+<dd><a href="javascript: chgAutoRef();"><img id="btn_r_img" src="./フロンティアモニター/images/auto_on.png" width="90" height="26"></a></dd>
+<!-- / #btn --></dl>
+
+<dl class="relationBlock" id="rSell">
+<dd><span class="numTxt" id="kattakw">0.00</span>kW</dd>
+<!-- / #rSell --></dl>
+
+<dl class="relationBlock" id="rBuy">
+<dd><span class="numTxt" id="hatsudenkw">3.91</span>kW</dd>
+<!-- / #rBuy --></dl>
+
+<dl class="relationBlock" id="rEPG">
+<dd><span class="numTxt" id="uttakw">0.87</span>kW</dd>
+<!-- / #rEPG --></dl>
+
+<dl class="relationBlock" id="rConsumption">
+<dd><span class="numTxt" id="shohikw">3.04</span>kW</dd>
+<!-- / #rConsumption --></dl>
+
+<dl class="relationBlock" id="rUse">
+<dd><span class="numTxt" id="shiyokw">3.04</span>kW</dd>
+<!-- / #rUse --></dl>
+
+<center><p class="inputImage"><a href="javascript: close();"><img src="./フロンティアモニター/images/btn_close2.gif" width="90" height="26" alt="閉じる"></a></p></center>
+<input type="hidden" id="httpsurl" name="httpsurl" value="https://www.frontier-monitor.com/persite"><input type="hidden" id="actionId" name="actionId" value=""></form>
+<!-- / #PopUpContents --></div>
+<div id="PopUpFooter">
+<p class="copyright"><font color="#FFFFFF">©SOLAR FRONTIER K.K.</font></p>
+<!-- / #Footer --></div>
+<!-- / #Container --></div>
+
+<!-- SiteCatalyst code version: H.21.
+Copyright 1996-2010 Adobe, Inc. All Rights Reserved
+More info available at http://www.omniture.com -->
+<script language="JavaScript" type="text/javascript" src="./フロンティアモニター/js/s_code.js"></script><img name="s_i_testryuhei0816" height="1" width="1" border="0" alt="">
+<script language="JavaScript" type="text/javascript"><!--
+/* You may give each page an identifying name, server, and channel on
+the next lines. */
+s.pageName="リアルタイム値"
+
+/************* DO NOT ALTER ANYTHING BELOW THIS LINE ! **************/
+var s_code=s.t();if(s_code)document.write(s_code)//--></script>
+<!--/DO NOT REMOVE/-->
+<!-- End SiteCatalyst code version: H.21. -->
+
+
+<div id="dgefdeggbheifdfjbefgbffbjedcgaji" style="color: initial; font: initial; font-feature-settings: initial; font-kerning: initial; font-optical-sizing: initial; font-palette: initial; font-synthesis: initial; font-variation-settings: initial; forced-color-adjust: initial; text-orientation: initial; text-rendering: initial; -webkit-font-smoothing: initial; -webkit-locale: initial; -webkit-text-orientation: initial; -webkit-writing-mode: initial; writing-mode: initial; zoom: initial; accent-color: initial; place-content: initial; place-items: initial; place-self: initial; alignment-baseline: initial; animation: initial; app-region: initial; appearance: initial; aspect-ratio: initial; backdrop-filter: initial; backface-visibility: initial; background: initial; background-blend-mode: initial; baseline-shift: initial; block-size: initial; border-block: initial; border: initial; border-radius: initial; border-collapse: initial; border-end-end-radius: initial; border-end-start-radius: initial; border-inline: initial; border-start-end-radius: initial; border-start-start-radius: initial; inset: initial; box-shadow: initial; box-sizing: initial; break-after: initial; break-before: initial; break-inside: initial; buffered-rendering: initial; caption-side: initial; caret-color: initial; clear: initial; clip: initial; clip-path: initial; clip-rule: initial; color-interpolation: initial; color-interpolation-filters: initial; color-rendering: initial; color-scheme: initial; columns: initial; column-fill: initial; gap: initial; column-rule: initial; column-span: initial; contain: initial; contain-intrinsic-block-size: initial; contain-intrinsic-size: initial; contain-intrinsic-inline-size: initial; container: initial; content: initial; content-visibility: initial; counter-increment: initial; counter-reset: initial; counter-set: initial; cursor: initial; cx: initial; cy: initial; d: initial; display: initial; dominant-baseline: initial; empty-cells: initial; fill: initial; fill-opacity: initial; fill-rule: initial; filter: initial; flex: initial; flex-flow: initial; float: initial; flood-color: initial; flood-opacity: initial; grid: initial; grid-area: initial; height: initial; hyphenate-character: initial; hyphenate-limit-chars: initial; hyphens: initial; image-orientation: initial; image-rendering: initial; inline-size: initial; inset-block: initial; inset-inline: initial; isolation: initial; letter-spacing: initial; lighting-color: initial; line-break: initial; list-style: initial; margin-block: initial; margin: initial; margin-inline: initial; marker: initial; mask: initial; mask-type: initial; math-depth: initial; math-shift: initial; math-style: initial; max-block-size: initial; max-height: initial; max-inline-size: initial; max-width: initial; min-block-size: initial; min-height: initial; min-inline-size: initial; min-width: initial; mix-blend-mode: initial; object-fit: initial; object-position: initial; object-view-box: initial; offset: initial; opacity: initial; order: initial; origin-trial-test-property: initial; orphans: initial; outline: initial; outline-offset: initial; overflow-anchor: initial; overflow-clip-margin: initial; overflow-wrap: initial; overflow: initial; overscroll-behavior-block: initial; overscroll-behavior-inline: initial; overscroll-behavior: initial; padding-block: initial; padding: initial; padding-inline: initial; page: initial; page-orientation: initial; paint-order: initial; perspective: initial; perspective-origin: initial; pointer-events: initial; position: relative; quotes: initial; r: initial; resize: initial; rotate: initial; ruby-position: initial; rx: initial; ry: initial; scale: initial; scroll-behavior: initial; scroll-margin-block: initial; scroll-margin: initial; scroll-margin-inline: initial; scroll-padding-block: initial; scroll-padding: initial; scroll-padding-inline: initial; scroll-snap-align: initial; scroll-snap-stop: initial; scroll-snap-type: initial; scrollbar-gutter: initial; shape-image-threshold: initial; shape-margin: initial; shape-outside: initial; shape-rendering: initial; size: initial; speak: initial; stop-color: initial; stop-opacity: initial; stroke: initial; stroke-dasharray: initial; stroke-dashoffset: initial; stroke-linecap: initial; stroke-linejoin: initial; stroke-miterlimit: initial; stroke-opacity: initial; stroke-width: initial; tab-size: initial; table-layout: initial; text-align: initial; text-align-last: initial; text-anchor: initial; text-combine-upright: initial; text-decoration: initial; text-decoration-skip-ink: initial; text-emphasis: initial; text-emphasis-position: initial; text-indent: initial; text-overflow: initial; text-shadow: initial; text-size-adjust: initial; text-transform: initial; text-underline-offset: initial; text-underline-position: initial; touch-action: initial; transform: initial; transform-box: initial; transform-origin: initial; transform-style: initial; transition: initial; translate: initial; user-select: initial; vector-effect: initial; vertical-align: initial; visibility: initial; border-spacing: initial; -webkit-box-align: initial; -webkit-box-decoration-break: initial; -webkit-box-direction: initial; -webkit-box-flex: initial; -webkit-box-ordinal-group: initial; -webkit-box-orient: initial; -webkit-box-pack: initial; -webkit-box-reflect: initial; -webkit-highlight: initial; -webkit-line-break: initial; -webkit-line-clamp: initial; -webkit-mask-box-image: initial; -webkit-mask: initial; -webkit-mask-composite: initial; -webkit-print-color-adjust: initial; -webkit-rtl-ordering: initial; -webkit-ruby-position: initial; -webkit-tap-highlight-color: initial; -webkit-text-combine: initial; -webkit-text-decorations-in-effect: initial; -webkit-text-fill-color: initial; -webkit-text-security: initial; -webkit-text-stroke: initial; -webkit-user-drag: initial; -webkit-user-modify: initial; white-space: initial; widows: initial; width: initial; will-change: initial; word-break: initial; word-spacing: initial; x: initial; y: initial; z-index: 2147483647;"></div></body></html>

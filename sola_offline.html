@@ -354,17 +354,62 @@ var s_code=s.t();if(s_code)document.write(s_code)//--></script>
 <!-- 認証要素追加 -->
 
     <style>
-        body { margin: 0; font-family: "Segoe UI", sans-serif; background-color: #f8f9fa; }
-        #login-screen { display: flex; justify-content: center; align-items: center; height: 100vh; width: 100%; position: fixed; top: 0; left: 0; background-color: #f8f9fa; z-index: 10000; transition: opacity 0.5s; }
-        .login-card { background: #fff; padding: 48px; border-radius: 8px; border: 1px solid #dadce0; text-align: center; width: 320px; }
-        h2 { font-size: 24px; font-weight: 400; margin-bottom: 24px; color: #202124; }
-        .pass-container { display: flex; justify-content: center; gap: 12px; margin-bottom: 20px; }
-        .pass-input { width: 50px; height: 60px; font-size: 28px; text-align: center; border: 1px solid #dadce0; border-radius: 4px; outline: none; transition: all 0.2s; }
-        .pass-input:focus { border: 2px solid #1a73e8; }
-        .error { border: 2px solid #d93025 !important; color: #d93025; animation: shake 0.2s ease-in-out 0s 2; }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
-        #toast { position: fixed; bottom: -60px; left: 24px; background: #323232; color: #fff; padding: 14px 24px; border-radius: 4px; font-size: 14px; transition: bottom 0.3s; z-index: 10001; box-shadow: 0 3px 5px rgba(0,0,0,0.3); }
-        #toast.show { bottom: 24px; }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8f9fa; }
+        
+        /* ログイン画面 */
+        #login-screen { 
+            display: flex; justify-content: center; align-items: center; 
+            height: 100vh; width: 100%; position: fixed; 
+            top: 0; left: 0; background-color: #f2f2f7; /* 薄いグレー */
+            z-index: 10000; transition: opacity 0.5s; 
+        }
+        
+        .login-card { 
+            background: #fff; padding: 40px 30px; border-radius: 12px; 
+            text-align: center; width: 300px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        h2 { font-size: 22px; font-weight: 600; margin-bottom: 24px; color: #000; }
+        
+        /* PIN入力 */
+        .pass-container { display: flex; justify-content: center; gap: 10px; margin-bottom: 30px; }
+        .pass-input { 
+            width: 50px; height: 65px; font-size: 32px; 
+            text-align: center; border: 1.5px solid #d1d1d6; 
+            border-radius: 10px; outline: none; transition: all 0.2s;
+            background-color: #fcfcfc;
+        }
+        .pass-input:focus { border: 2.5px solid #007aff; } /* ブルー */
+        
+        .error { border: 2px solid #ff3b30 !important; color: #ff3b30; animation: shake 0.25s ease-in-out 0s 2; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+        
+        /* --- トグルスイッチ --- */
+        .settings-row {
+            display: flex; align-items: center; justify-content: space-between;
+            background: #f9f9f9; padding: 12px 16px; border-radius: 10px;
+            margin-top: 10px;
+        }
+        .settings-label { font-size: 14px; color: #3a3a3c; font-weight: 500; }
+
+        .ios-switch {
+            position: relative; display: inline-block; width: 51px; height: 31px;
+        }
+        .ios-switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #e9e9ea; transition: .3s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 27px; width: 27px; left: 2px; bottom: 2px;
+            background-color: white; transition: .3s; border-radius: 50%;
+            box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+        }
+        input:checked + .slider { background-color: #34c759; } /* グリーン */
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        /* 保護コンテンツ */
         #protected-content { display: none; }
     </style>
 </head>
@@ -374,81 +419,84 @@ var s_code=s.t();if(s_code)document.write(s_code)//--></script>
     <div class="login-card">
         <h2>認証</h2>
         <div class="pass-container">
-            <input type="password" class="pass-input" maxlength="1" inputmode="numeric" autofocus autocomplete="off">
-            <input type="password" class="pass-input" maxlength="1" inputmode="numeric" autocomplete="off">
-            <input type="password" class="pass-input" maxlength="1" inputmode="numeric" autocomplete="off">
-            <input type="password" class="pass-input" maxlength="1" inputmode="numeric" autocomplete="off">
+            <input type="password" class="pass-input" maxlength="1" inputmode="numeric" autofocus>
+            <input type="password" class="pass-input" maxlength="1" inputmode="numeric">
+            <input type="password" class="pass-input" maxlength="1" inputmode="numeric">
+            <input type="password" class="pass-input" maxlength="1" inputmode="numeric">
+        </div>
+        
+        <div class="settings-row">
+            <span class="settings-label">24時間認証を保持</span>
+            <label class="ios-switch">
+                <input type="checkbox" id="persist-auth" checked>
+                <span class="slider"></span>
+            </label>
         </div>
     </div>
 </div>
 
-<div id="toast">認証に成功しました</div>
-
 <div id="protected-content">
-    </div>
+ 
+</div>
 
 <script>
     const inputs = document.querySelectorAll('.pass-input');
-    const toast = document.getElementById('toast');
+    const loginScreen = document.getElementById('login-screen');
+    const protectedContent = document.getElementById('protected-content');
+    const persistCheckbox = document.getElementById('persist-auth');
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const expiry = localStorage.getItem('auth_expiry');
+        if (expiry && new Date().getTime() < parseInt(expiry)) {
+            showContent(true);
+        }
+    });
 
     inputs.forEach((input, index) => {
         input.addEventListener('input', (e) => {
-            // 数字以外を消去
             e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            if (e.target.value && index < inputs.length - 1) inputs[index + 1].focus();
             
-            // 次のボックスへ移動
-            if (e.target.value && index < inputs.length - 1) {
-                inputs[index + 1].focus();
-            }
-            
-            // 4桁揃ったら判定
             const code = Array.from(inputs).map(i => i.value).join('');
             if (code.length === 4) {
-
-                const v = Array.from(inputs).map(i => parseInt(i.value));
-                
-                const isCorrect = (v[0] === 8 && v[1] === 0 && v[2] === 0 && v[3] === 4);
-
-                if (isCorrect) {
-                    success();
+                if (code === "8004") {
+                    if (persistCheckbox.checked) {
+                        const expiryTime = new Date().getTime() + (24 * 60 * 60 * 1000);
+                        localStorage.setItem('auth_expiry', expiryTime);
+                    }
+                    showContent(false);
                 } else {
                     fail();
                 }
             }
         });
 
-        // バックスペースで戻る
         input.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' && !e.target.value && index > 0) {
-                inputs[index - 1].focus();
-            }
+            if (e.key === 'Backspace' && !e.target.value && index > 0) inputs[index - 1].focus();
         });
     });
 
     function fail() {
         inputs.forEach(i => {
             i.classList.add('error');
-            setTimeout(() => {
-                i.value = "";
-                i.classList.remove('error');
-            }, 500);
+            setTimeout(() => { i.value = ""; i.classList.remove('error'); }, 500);
         });
         inputs[0].focus();
     }
 
-    function success() {
-        toast.classList.add('show');
-        setTimeout(() => {
-            document.getElementById('login-screen').style.opacity = "0";
+    function showContent(immediate) {
+        if (immediate) {
+            loginScreen.style.display = 'none';
+            protectedContent.style.display = 'block';
+        } else {
+            loginScreen.style.opacity = "0";
             setTimeout(() => {
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('protected-content').style.display = 'block';
-                toast.classList.remove('show');
+                loginScreen.style.display = 'none';
+                protectedContent.style.display = 'block';
             }, 500);
-        }, 800);
+        }
     }
 </script>
-
 
 </body>
 </html>

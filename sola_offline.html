@@ -592,7 +592,7 @@ function addFailCount() {
 function checkDailyLimit() {
   const count=getFailCount();
 
-  if (count >=2) {
+  if (count >=5) {
     lockErrorMode();
     return true;
   }

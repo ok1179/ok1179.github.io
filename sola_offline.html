@@ -22,8 +22,8 @@
 <script type="text/javascript">
 //更新処理
 var update;
-//更新処理失敗回数
-var sendErrorCount = 0;
+//連続エラー回数
+var consecutiveErrors = 0;
 //通信中フラグ
 var isConnecting = 0;
 //接続先IP配列
@@ -37,9 +37,9 @@ $(function(){
 	//画面定期更新関数定義
 	update = function(status , target) {
 		if (target == null) target = 0;
-		var homeSvrUrl= urls[target];
+		var homeSvrUrl = urls[target];
 
-		if( homeSvrUrl == "") {
+		if(!homeSvrUrl || homeSvrUrl == "") {
 			doErr(target);
 			return;
 		}else{
@@ -47,10 +47,11 @@ $(function(){
 		}
 
 		var now = new Date();
-		var timerout_ = 5 * 1000;
+		// タイムアウトを10秒に延長して通信の瞬断に対応
+		var timerout_ = 10 * 1000;
 
 		$.ajax({
-			type : 'POST',
+			type : 'GET', // GET / POST 両対応
 			url  : homeSvrUrl,
 			timeout : timerout_,
 			data : {
@@ -59,6 +60,7 @@ $(function(){
 			dataType : "jsonp",
 			jsonpCallback : "getAdded_Power",
 			success : function(data) {
+				consecutiveErrors = 0; // 成功したらエラー回数をリセット
 				doView(target , data);
 			},
 			error : function(XMLHttpRequest, textStatus, errorThrown) {
@@ -71,9 +73,10 @@ $(function(){
 function startMonitoring() {
 	try{
 		isConnecting = 1;
+		consecutiveErrors = 0;
 		update("load", 0);
 	}catch( e ){
-		doErr();
+		doErr(0);
 	}
 }
 
@@ -130,8 +133,9 @@ function doView(targetIndex , data)
 
     if ($("#autoRef").val() == "1")
    	{
-    	var timerInterval = 1 * 1000;
-    	timerID = setTimeout(update, timerInterval);
+    	clearTimeout(timerID);
+    	var timerInterval = 2 * 1000;
+    	timerID = setTimeout(function(){ update("auto", 0); }, timerInterval);
    	}
 
 	isConnecting = 0;
@@ -158,32 +162,22 @@ function shiyo(hatsudenkw, uttakw)
 
 function doErr(targetIndex)
 {
-	$("#hatsudenkw") .html("－");
-	$("#uttakw") .html("－");
-	$("#kattakw") .html("－");
-	$("#shohikw") .html("－");
-	$("#shiyokw") .html("－");
+	consecutiveErrors++;
 
-	targetIndex ++ ;
-	if (targetIndex < urls.length)
-	{
-		update("retry" , targetIndex);
-		return;
+	// 3回以上連続で失敗した場合のみ「－」を表示する（一時的な遅延で消さないように改善）
+	if (consecutiveErrors >= 3) {
+		$("#hatsudenkw") .html("－");
+		$("#uttakw") .html("－");
+		$("#kattakw") .html("－");
+		$("#shohikw") .html("－");
+		$("#shiyokw") .html("－");
 	}
 
+	// 自動更新がONなら2秒後に再試行
 	if ($("#autoRef").val() == "1")
 	{
-		sendErrorCount++;
-		if ( sendErrorCount < 3 )
-		{
-	    	var timerInterval = 1 * 1000;
-	    	setTimeout(update, timerInterval);
-	    	return;
-		}
-		else
-		{
-		    chgAutoRef();
-		}
+		clearTimeout(timerID);
+		timerID = setTimeout(function(){ update("retry", 0); }, 2000);
 	}
 	isConnecting = 0;
 }
@@ -207,6 +201,7 @@ function chgAutoRef()
    	{
     	$("#autoRef").val("0");
     	$("#btn_r_img").attr("src" , btoff_ );
+    	clearTimeout(timerID);
    	}
     else
    	{
@@ -215,7 +210,7 @@ function chgAutoRef()
     	if (isConnecting == 0)
     	{
     		isConnecting = 1;
-    		sendErrorCount = 0;
+    		consecutiveErrors = 0;
     		update('autoon' , 0);
     	}
    	}
@@ -232,7 +227,7 @@ function updateManual()
 </script>
 
 <style type="text/css">
-/* ===== ロック画面 (テレビ完全中央配置対応) ===== */
+/* ===== ロック画面 (テレビ中央配置) ===== */
 #login-screen {
   position: fixed;
   top: 0;
@@ -242,14 +237,8 @@ function updateManual()
   min-height: 100%;
   background-color: #f2f2f7;
   z-index: 999999;
-  display: -webkit-box;
-  display: -ms-flexbox;
   display: flex;
-  -webkit-box-pack: center;
-  -ms-flex-pack: center;
   justify-content: center;
-  -webkit-box-align: center;
-  -ms-flex-align: center;
   align-items: center;
   text-align: center;
 }
@@ -272,7 +261,6 @@ function updateManual()
   color: #1c1c1e;
 }
 
-/* PIN ドット表示 */
 .pass-container {
   display: flex;
   justify-content: center;
@@ -299,7 +287,6 @@ function updateManual()
   border-color: #ff3b30 !important;
 }
 
-/* テンキー (リモコンで押せる) */
 .keypad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -342,7 +329,6 @@ function updateManual()
   border: 2px solid #ff3b30;
 }
 
-/* スイッチ */
 .settings-row {
   display: flex;
   align-items: center;
@@ -386,7 +372,23 @@ function updateManual()
 input:checked + .slider { background-color: #34c759; }
 input:checked + .slider:before { transform: translateX(18px); }
 
-/* 初期状態でメイン画面を隠す */
+/* ロックボタン (閉じるの代替) */
+.btn-lock-action {
+  display: inline-block;
+  background-color: #64748b;
+  color: #ffffff !important;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: bold;
+  padding: 6px 20px;
+  border-radius: 6px;
+  line-height: 1.5;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.btn-lock-action:hover {
+  background-color: #475569;
+}
+
 #Container2 {
   display: none;
 }
@@ -433,7 +435,7 @@ input:checked + .slider:before { transform: translateX(18px); }
   </div>        
 </div>
 
-<!-- ===== モニター本体 (デザインそのまま) ===== -->
+<!-- ===== モニター本体 ===== -->
 <div id="Container2">
 <div id="PopUpContents">
 <form action="https://www.frontier-monitor.com/persite/$action$">
@@ -460,18 +462,24 @@ input:checked + .slider:before { transform: translateX(18px); }
 </dl>
 
 <dl class="relationBlock" id="rEPG">
-<dd><span class="numTxt" id="uttakw">0.87</span>kW</dd>
+<dd><span class="numTxt" id="uttakw">0.00</span>kW</dd>
 </dl>
 
 <dl class="relationBlock" id="rConsumption">
-<dd><span class="numTxt" id="shohikw">3.04</span>kW</dd>
+<dd><span class="numTxt" id="shohikw">0.00</span>kW</dd>
 </dl>
 
 <dl class="relationBlock" id="rUse">
-<dd><span class="numTxt" id="shiyokw">3.04</span>kW</dd>
+<dd><span class="numTxt" id="shiyokw">0.00</span>kW</dd>
 </dl>
 
-<center><p class="inputImage"><a href="javascript: close();"><img src="./フロンティアモニター/images/btn_close2.gif" width="90" height="26" alt="閉じる"></a></p></center>
+<!-- 「閉じる」を「ロック」ボタンに変更 -->
+<center>
+  <p class="inputImage" style="margin-top: 10px;">
+    <a href="javascript:lockScreen();" class="btn-lock-action">🔒 ロックする</a>
+  </p>
+</center>
+
 <input type="hidden" id="httpsurl" name="httpsurl" value="https://www.frontier-monitor.com/persite">
 <input type="hidden" id="actionId" name="actionId" value="">
 </form>
@@ -482,7 +490,7 @@ input:checked + .slider:before { transform: translateX(18px); }
 </div>
 
 <script type="text/javascript">
-// ===== ロック画面・PIN認証ロジック =====
+// ===== ロック処理 =====
 var inputPin = "";
 var TARGET_PIN = "8004";
 
@@ -579,22 +587,28 @@ function verifyCode() {
 function unlock() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('Container2').style.display = 'block';
-  // モニター通信開始
   startMonitoring();
 }
 
-// 物理キーボード / リモコン数字キー対応
+// 画面下の「ロックする」ボタンを押したときの処理
+function lockScreen() {
+  localStorage.removeItem('auth_expiry');
+  clearPin();
+  clearTimeout(timerID);
+  document.getElementById('Container2').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+
 window.onkeydown = function(e) {
   if (document.getElementById('login-screen').style.display === 'none') return;
   var key = e.key || String.fromCharCode(e.keyCode);
   if (key >= '0' && key <= '9') {
     addPin(key);
-  } else if (e.keyCode === 8) { // Backspace
+  } else if (e.keyCode === 8) {
     delPin();
   }
 };
 
-// 起動時チェック
 window.onload = function() {
   var expiry = localStorage.getItem('auth_expiry');
   if (expiry && new Date().getTime() < parseInt(expiry)) {

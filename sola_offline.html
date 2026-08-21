@@ -1,847 +1,490 @@
-<!DOCTYPE html>
-<html lang="ja">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="ja" xml:lang="ja" dir="ltr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <meta http-equiv="pragma" content="no-cache">
 <meta http-equiv="cache-control" content="no-cache">
 <meta http-equiv="Expires" content="-1">
-<link rel="icon" type="image/x-icon" href="icon.png">
-<title>エネルギーモニター</title>
+<meta name="robots" content="index,follow">
+<meta name="robots" content="noodp">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<meta http-equiv="Content-Script-Type" content="text/javascript">
+<title>フロンティアモニター  - ホームエネルギーモニタリングサービス -</title>
+<link rel="index start" href="https://www.frontier-monitor.com/persite/index.html" title="ホーム">
+<link href="./フロンティアモニター/css/rt_import.css" rel="stylesheet" type="text/css" media="all">
+<script src="./フロンティアモニター/js/jquery-1.5.1.min.js" type="text/javascript"></script>
+<script src="./フロンティアモニター/js/jquery.scrollTo-1.4.2-min.js" type="text/javascript"></script>
+<script src="./フロンティアモニター/js/jquery.rollover.js" type="text/javascript"></script>
+<script src="./フロンティアモニター/js/init.js" type="text/javascript"></script>
+<script src="./フロンティアモニター/js/validator.js" type="text/javascript"></script>
+<script src="./フロンティアモニター/js/prepform.js" type="text/javascript"></script>
 
-<!-- Google Fonts & Material Symbols -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24..48,400..700,0..1,0" />
+<script type="text/javascript">
+//更新処理
+var update;
+//更新処理失敗回数
+var sendErrorCount = 0;
+//通信中フラグ
+var isConnecting = 0;
+//接続先IP配列
+var urls ='192.168.1.7'.split(';');
+var timerID = null;
 
-<script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+$(function(){
+	initHttpsUrl('https://www.frontier-monitor.com/persite');
+	prepFormSmall();
 
-<style>
-/* ===== Material Design 3 Light ===== */
-:root {
-  --bg-color: #f8f9fa;
-  --surface-color: #ffffff;
-  --surface-container: #f1f5f9;
-  --surface-variant: #e2e8f0;
-  
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-tertiary: #64748b;
-  
-  /* カード配色 */
-  --solar-bg: #fffbeb;
-  --solar-border: #fcd34d;
-  --solar-text: #b45309;
-  --solar-num: #d97706;
+	//画面定期更新関数定義
+	update = function(status , target) {
+		if (target == null) target = 0;
+		var homeSvrUrl= urls[target];
 
-  --consume-bg: #f0f9ff;
-  --consume-border: #7dd3fc;
-  --consume-text: #0369a1;
-  --consume-num: #0284c7;
+		if( homeSvrUrl == "") {
+			doErr(target);
+			return;
+		}else{
+			homeSvrUrl = "http://" + homeSvrUrl + "/GetMonitoringData.cgi";
+		}
 
-  --sell-bg: #ecfdf5;
-  --sell-border: #6ee7b7;
-  --sell-text: #047857;
-  --sell-num: #059669;
+		var now = new Date();
+		var timerout_ = 5 * 1000;
 
-  --buy-bg: #fef2f2;
-  --buy-border: #fca5a5;
-  --buy-text: #b91c1c;
-  --buy-num: #dc2626;
+		$.ajax({
+			type : 'POST',
+			url  : homeSvrUrl,
+			timeout : timerout_,
+			data : {
+				  "time" : now.getTime()
+			},
+			dataType : "jsonp",
+			jsonpCallback : "getAdded_Power",
+			success : function(data) {
+				doView(target , data);
+			},
+			error : function(XMLHttpRequest, textStatus, errorThrown) {
+				doErr(target);
+			}
+		});
+	};
+});
 
-  --use-bg: #faf5ff;
-  --use-border: #d8b4fe;
-  --use-text: #6b21a8;
-  --use-num: #7e22ce;
-
-  --error-color: #ef4444;
+function startMonitoring() {
+	try{
+		isConnecting = 1;
+		update("load", 0);
+	}catch( e ){
+		doErr();
+	}
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-  -webkit-tap-highlight-color: transparent;
+function doView(targetIndex , data)
+{
+	var hatsudenkw = data.added_power;
+	var uttakw = data.added_sellpower;
+	var kattakw = data.added_buypower;
+	var ZERO_FMT = "0.00";
+
+	if((hatsudenkw != "") && (hatsudenkw != null)){
+		hatsuden = roundOff(hatsudenkw);
+		$("#hatsudenkw") .html(hatsuden);
+	}else{
+		$("#hatsudenkw") .html(ZERO_FMT);
+		hatsudenkw = 0;
+	}
+
+	if((uttakw != "") && (uttakw != null)){
+		utta = roundOff(uttakw);
+		$("#uttakw") .html(utta);
+	}else{
+		$("#uttakw") .html(ZERO_FMT);
+		uttakw = 0;
+	}
+
+	if((kattakw != "") && (kattakw != null)){
+		katta = roundOff(kattakw);
+		$("#kattakw") .html(katta);
+	}else{
+		$("#kattakw") .html(ZERO_FMT);
+		kattakw = 0;
+	}
+
+	if(parseFloat(utta) > parseFloat(katta)) {
+		$("#blinking").attr("src", "./フロンティアモニター/images/blink4moment.gif");
+	} else {
+		$("#blinking").attr("src", "./フロンティアモニター/images/clear.gif");
+	}
+
+	if((hatsudenkw == 0) && (uttakw == 0) && (kattakw == 0)){
+		$("#shohikw") .html(ZERO_FMT);
+	}else{
+		var shohikw = syohi(hatsudenkw, uttakw, kattakw);
+		$("#shohikw") .html(shohikw  );
+	}
+
+	if((data.added_power == "") && (data.added_sellpower == "")){
+		$("#shiyokw") .html(ZERO_FMT);
+	}else{
+		var shiyokw = shiyo(hatsudenkw, uttakw);
+		$("#shiyokw") .html(shiyokw  );
+	}
+
+    if ($("#autoRef").val() == "1")
+   	{
+    	var timerInterval = 1 * 1000;
+    	timerID = setTimeout(update, timerInterval);
+   	}
+
+	isConnecting = 0;
 }
 
-body {
-  font-family: 'Noto Sans JP', -apple-system, sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-primary);
-  min-height: 100vh;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
+function syohi(hatsudenkw, uttakw, kattakw)
+{
+	var hatsu = parseFloat(hatsudenkw);
+	var uri = parseFloat(uttakw);
+	var kai = parseFloat(kattakw);
+	var syohi = hatsu - uri + kai;
+	syohi = roundOff(syohi);
+	return syohi;
 }
 
-.material-symbols-rounded {
-  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+function shiyo(hatsudenkw, uttakw)
+{
+	var hatsu = parseFloat(hatsudenkw);
+	var uri = parseFloat(uttakw);
+	var shiyo = hatsu - uri;
+	shiyo = roundOff(shiyo);
+	return shiyo;
 }
 
-/* ===== ロック画面 (白ベース / M3) ===== */
+function doErr(targetIndex)
+{
+	$("#hatsudenkw") .html("－");
+	$("#uttakw") .html("－");
+	$("#kattakw") .html("－");
+	$("#shohikw") .html("－");
+	$("#shiyokw") .html("－");
+
+	targetIndex ++ ;
+	if (targetIndex < urls.length)
+	{
+		update("retry" , targetIndex);
+		return;
+	}
+
+	if ($("#autoRef").val() == "1")
+	{
+		sendErrorCount++;
+		if ( sendErrorCount < 3 )
+		{
+	    	var timerInterval = 1 * 1000;
+	    	setTimeout(update, timerInterval);
+	    	return;
+		}
+		else
+		{
+		    chgAutoRef();
+		}
+	}
+	isConnecting = 0;
+}
+
+function roundOff(n){
+	var val = new Number(n);
+	val = val * 100;
+	val = val / 1000;
+	val = Math.round(val);
+	val = val / 100;
+	val = val.toFixed(2);
+	return val;
+}
+
+function chgAutoRef()
+{
+	var bton_  = './フロンティアモニター/images/auto_on.png';
+	var btoff_ = './フロンティアモニター/images/auto_off.png';
+
+    if ($("#autoRef").val() == "1")
+   	{
+    	$("#autoRef").val("0");
+    	$("#btn_r_img").attr("src" , btoff_ );
+   	}
+    else
+   	{
+    	$("#autoRef").val("1");
+    	$("#btn_r_img").attr("src" , bton_ );
+    	if (isConnecting == 0)
+    	{
+    		isConnecting = 1;
+    		sendErrorCount = 0;
+    		update('autoon' , 0);
+    	}
+   	}
+}
+
+function updateManual()
+{
+	if (isConnecting == 0)
+	{
+		isConnecting = 1;
+		update('manual' , 0);
+	}
+}
+</script>
+
+<style type="text/css">
+/* ===== ロック画面 (テレビ完全中央配置対応) ===== */
 #login-screen {
   position: fixed;
-  inset: 0;
-  background-color: #f8f9fa;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  background-color: #f2f2f7;
+  z-index: 999999;
+  display: -webkit-box;
+  display: -ms-flexbox;
   display: flex;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
   justify-content: center;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
   align-items: center;
-  z-index: 10000;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
+  text-align: center;
 }
 
 .login-card {
+  margin: auto;
   background: #ffffff;
-  border: 1px solid var(--surface-variant);
-  border-radius: 28px;
-  padding: 36px 28px;
-  width: 90%;
-  max-width: 360px;
+  padding: 30px 24px;
+  border-radius: 16px;
   text-align: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-}
-
-.login-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
-}
-
-.login-icon-box {
-  width: 56px;
-  height: 56px;
-  border-radius: 18px;
-  background: var(--surface-container);
-  color: #0284c7;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 320px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
 }
 
 .login-card h2 {
   font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
+  font-weight: bold;
+  margin: 0 0 16px 0;
+  color: #1c1c1e;
 }
 
-/* PIN ドット */
-.pin-dots {
+/* PIN ドット表示 */
+.pass-container {
   display: flex;
   justify-content: center;
-  gap: 16px;
-  margin-bottom: 28px;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 
-.dot {
+.pass-dot {
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: var(--surface-variant);
-  transition: all 0.15s ease;
+  border: 2px solid #c7c7cc;
+  background-color: transparent;
+  box-sizing: border-box;
 }
 
-.dot.filled {
-  background: #0284c7;
-  transform: scale(1.15);
+.pass-dot.filled {
+  background-color: #007aff;
+  border-color: #007aff;
 }
 
-.dot.error {
-  background: var(--error-color) !important;
+.pass-dot.error {
+  background-color: #ff3b30 !important;
+  border-color: #ff3b30 !important;
 }
 
-/* テンキー (白ベース) */
-.numpad {
+/* テンキー (リモコンで押せる) */
+.keypad {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  margin-bottom: 24px;
-  justify-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
 }
 
-.num-btn {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: var(--surface-container);
-  color: var(--text-primary);
-  border: none;
-  font-family: 'Outfit', sans-serif;
-  font-size: 26px;
-  font-weight: 600;
+.key-btn {
+  background-color: #f2f2f7;
+  border: 1px solid #d1d1d6;
+  border-radius: 10px;
+  font-size: 22px;
+  font-weight: bold;
+  color: #000;
+  padding: 12px 0;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   outline: none;
 }
 
-.num-btn:hover, .num-btn:focus-visible {
-  background: var(--surface-variant);
-  outline: 2px solid #0284c7;
+.key-btn:focus, .key-btn:hover {
+  background-color: #007aff;
+  color: #fff;
+  border-color: #007aff;
 }
 
-.num-btn:active {
-  background: #cbd5e1;
-}
-
-.num-btn.sub-btn {
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 15px;
-  font-weight: 500;
-}
-
-.num-btn.sub-btn:hover, .num-btn.sub-btn:focus-visible {
-  background: var(--surface-container);
+.key-btn.sub {
+  font-size: 14px;
+  color: #8e8e93;
 }
 
 .day-error-box {
-  margin-bottom: 16px;
+  margin: 10px 0;
   font-size: 13px;
-  color: var(--error-color);
-  font-weight: 700;
+  font-weight: bold;
+  color: #ff3b30;
   display: none;
 }
 
 .lock-red {
-  border-color: var(--error-color) !important;
+  border: 2px solid #ff3b30;
 }
 
-/* 24時間保持スイッチ */
+/* スイッチ */
 .settings-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--surface-container);
-  padding: 12px 18px;
-  border-radius: 16px;
+  background: #f9f9f9;
+  padding: 10px 14px;
+  border-radius: 10px;
   font-size: 13px;
-  color: var(--text-secondary);
+  color: #3a3a3c;
 }
 
-.m3-switch {
+.ios-switch {
   position: relative;
-  width: 48px;
-  height: 28px;
+  display: inline-block;
+  width: 44px;
+  height: 26px;
 }
 
-.m3-switch input { opacity: 0; width: 0; height: 0; }
+.ios-switch input { opacity: 0; width: 0; height: 0; }
 
-.m3-slider {
+.slider {
   position: absolute;
-  inset: 0;
-  background-color: #cbd5e1;
-  border-radius: 28px;
   cursor: pointer;
-  transition: 0.2s;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #e9e9ea;
+  border-radius: 34px;
 }
 
-.m3-slider:before {
+.slider:before {
   position: absolute;
   content: "";
-  height: 20px;
-  width: 20px;
-  left: 4px;
-  bottom: 4px;
-  background-color: #ffffff;
+  height: 22px;
+  width: 22px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
   border-radius: 50%;
-  transition: 0.2s;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-input:checked + .m3-slider { background-color: #10b981; }
-input:checked + .m3-slider:before {
-  transform: translateX(20px);
-}
+input:checked + .slider { background-color: #34c759; }
+input:checked + .slider:before { transform: translateX(18px); }
 
-/* ===== メインダッシュボード ===== */
-#protected-content {
+/* 初期状態でメイン画面を隠す */
+#Container2 {
   display: none;
-  width: 100%;
-  max-width: 1120px;
-  margin: 0 auto;
-  flex-direction: column;
-  gap: 20px;
 }
-
-/* トップバー */
-.top-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: var(--surface-color);
-  padding: 16px 24px;
-  border-radius: 20px;
-  border: 1px solid var(--surface-variant);
-}
-
-.brand-group {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.brand-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: #fef3c7;
-  color: #d97706;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.brand-text h1 {
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.controls-group {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* 静的売電中バッジ (アニメーションなし) */
-.status-badge {
-  display: none;
-  align-items: center;
-  gap: 6px;
-  background: var(--sell-bg);
-  color: var(--sell-text);
-  border: 1px solid var(--sell-border);
-  padding: 8px 14px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-/* M3 ボタン (アニメーションなし) */
-.m3-button {
-  background: var(--surface-container);
-  color: var(--text-secondary);
-  border: 1px solid transparent;
-  padding: 8px 14px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  outline: none;
-}
-
-.m3-button:hover, .m3-button:focus-visible {
-  background: var(--surface-variant);
-  border-color: #cbd5e1;
-}
-
-.m3-button.active {
-  background: #0284c7;
-  color: #ffffff;
-}
-
-.m3-button.lock-btn {
-  color: #b91c1c;
-  background: #fef2f2;
-}
-
-.m3-button.lock-btn:hover {
-  background: #fee2e2;
-}
-
-/* 自給率メーター (単体) */
-.summary-bar {
-  background: var(--surface-color);
-  padding: 16px 24px;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  border: 1px solid var(--surface-variant);
-}
-
-.summary-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 140px;
-}
-
-.summary-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-secondary);
-}
-
-.summary-value {
-  font-family: 'Outfit', sans-serif;
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.progress-track {
-  flex: 1;
-  height: 12px;
-  background: var(--surface-container);
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  width: 0%;
-  background: #10b981;
-  border-radius: 6px;
-}
-
-/* カードグリッド */
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
-}
-
-.card {
-  background: var(--surface-color);
-  border-radius: 24px;
-  padding: 22px 24px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 165px;
-  border: 1px solid var(--surface-variant);
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.card-icon-wrap {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.card-title {
-  font-size: 15px;
-  font-weight: 700;
-}
-
-.card-desc {
-  font-size: 12px;
-  color: var(--text-tertiary);
-}
-
-.card-body {
-  display: flex;
-  align-items: baseline;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-.card-value {
-  font-family: 'Outfit', sans-serif;
-  font-size: 48px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -1px;
-}
-
-.card-unit {
-  font-family: 'Outfit', sans-serif;
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-tertiary);
-}
-
-/* 各種カード配色 */
-.card-solar { background: var(--solar-bg); border-color: var(--solar-border); }
-.card-solar .card-icon-wrap { background: #fff; color: var(--solar-text); }
-.card-solar .card-title { color: var(--solar-text); }
-.card-solar .card-value { color: var(--solar-num); }
-
-.card-consume { background: var(--consume-bg); border-color: var(--consume-border); }
-.card-consume .card-icon-wrap { background: #fff; color: var(--consume-text); }
-.card-consume .card-title { color: var(--consume-text); }
-.card-consume .card-value { color: var(--consume-num); }
-
-.card-sell { background: var(--sell-bg); border-color: var(--sell-border); }
-.card-sell .card-icon-wrap { background: #fff; color: var(--sell-text); }
-.card-sell .card-title { color: var(--sell-text); }
-.card-sell .card-value { color: var(--sell-num); }
-
-.card-buy { background: var(--buy-bg); border-color: var(--buy-border); }
-.card-buy .card-icon-wrap { background: #fff; color: var(--buy-text); }
-.card-buy .card-title { color: var(--buy-text); }
-.card-buy .card-value { color: var(--buy-num); }
-
-.card-use { background: var(--use-bg); border-color: var(--use-border); }
-.card-use .card-icon-wrap { background: #fff; color: var(--use-text); }
-.card-use .card-title { color: var(--use-text); }
-.card-use .card-value { color: var(--use-num); }
 </style>
 </head>
+
 <body>
 
-<!-- ===== PINロック画面 ===== -->
+<!-- ===== ロック画面 ===== -->
 <div id="login-screen">
   <div class="login-card" id="login-card">
-    <div class="login-header">
-      <div class="login-icon-box">
-        <span class="material-symbols-rounded" style="font-size: 28px;">lock</span>
-      </div>
-      <h2>暗証番号を入力</h2>
+    <h2>認証</h2>
+    <div class="pass-container">
+      <div class="pass-dot" id="pdot-0"></div>
+      <div class="pass-dot" id="pdot-1"></div>
+      <div class="pass-dot" id="pdot-2"></div>
+      <div class="pass-dot" id="pdot-3"></div>
     </div>
     
-    <div class="pin-dots">
-      <div class="dot" id="dot-0"></div>
-      <div class="dot" id="dot-1"></div>
-      <div class="dot" id="dot-2"></div>
-      <div class="dot" id="dot-3"></div>
-    </div>
+    <div id="day-error" class="day-error-box">本日の認証エラー上限に達しました。</div>
 
-    <div id="day-error" class="day-error-box">本日の認証エラー上限に達しました</div>
-
-    <!-- テンキー -->
-    <div class="numpad">
-      <button class="num-btn" onclick="pressKey('1')">1</button>
-      <button class="num-btn" onclick="pressKey('2')">2</button>
-      <button class="num-btn" onclick="pressKey('3')">3</button>
-      <button class="num-btn" onclick="pressKey('4')">4</button>
-      <button class="num-btn" onclick="pressKey('5')">5</button>
-      <button class="num-btn" onclick="pressKey('6')">6</button>
-      <button class="num-btn" onclick="pressKey('7')">7</button>
-      <button class="num-btn" onclick="pressKey('8')">8</button>
-      <button class="num-btn" onclick="pressKey('9')">9</button>
-      <button class="num-btn sub-btn" onclick="clearPin()">クリア</button>
-      <button class="num-btn" onclick="pressKey('0')">0</button>
-      <button class="num-btn sub-btn" onclick="deletePin()">
-        <span class="material-symbols-rounded">backspace</span>
-      </button>
+    <div class="keypad">
+      <button type="button" class="key-btn" onclick="addPin('1')">1</button>
+      <button type="button" class="key-btn" onclick="addPin('2')">2</button>
+      <button type="button" class="key-btn" onclick="addPin('3')">3</button>
+      <button type="button" class="key-btn" onclick="addPin('4')">4</button>
+      <button type="button" class="key-btn" onclick="addPin('5')">5</button>
+      <button type="button" class="key-btn" onclick="addPin('6')">6</button>
+      <button type="button" class="key-btn" onclick="addPin('7')">7</button>
+      <button type="button" class="key-btn" onclick="addPin('8')">8</button>
+      <button type="button" class="key-btn" onclick="addPin('9')">9</button>
+      <button type="button" class="key-btn sub" onclick="clearPin()">クリア</button>
+      <button type="button" class="key-btn" onclick="addPin('0')">0</button>
+      <button type="button" class="key-btn sub" onclick="delPin()">⌫</button>
     </div>
 
     <div class="settings-row">
-      <span>24時間認証を表示しない</span>
-      <label class="m3-switch">
-        <input type="checkbox" id="persist-auth" checked>
-        <span class="m3-slider"></span>
+      <span class="settings-label">24時間認証を表示しない</span>
+      <label class="ios-switch">
+        <input type="checkbox" id="persist-auth" checked="checked">
+        <span class="slider"></span>
       </label>
     </div>
-  </div>
+  </div>        
 </div>
 
-<!-- ===== メインコンテンツ ===== -->
-<div id="protected-content">
-  <!-- トップバー -->
-  <div class="top-bar">
-    <div class="brand-group">
-      <div class="brand-icon">
-        <span class="material-symbols-rounded">solar_power</span>
-      </div>
-      <div class="brand-text">
-        <h1>エネルギーモニター</h1>
-      </div>
-    </div>
-    
-    <div class="controls-group">
-      <div id="sell-badge" class="status-badge">
-        <span class="material-symbols-rounded" style="font-size: 18px;">bolt</span>
-        売電中
-      </div>
-      <button class="m3-button" onclick="updateManual()">
-        <span class="material-symbols-rounded" style="font-size: 18px;">refresh</span>
-        更新
-      </button>
-      <button class="m3-button active" id="auto-btn" onclick="chgAutoRef()">
-        <span class="material-symbols-rounded" style="font-size: 18px;">autorenew</span>
-        自動更新
-      </button>
-      <!-- 右端：ロックするボタン -->
-      <button class="m3-button lock-btn" onclick="manualLock()">
-        <span class="material-symbols-rounded" style="font-size: 18px;">lock</span>
-        ロック
-      </button>
-    </div>
-  </div>
+<!-- ===== モニター本体 (デザインそのまま) ===== -->
+<div id="Container2">
+<div id="PopUpContents">
+<form action="https://www.frontier-monitor.com/persite/$action$">
+<input type="hidden" id="autoRef" name="autoRefresh" value="1">
+<dl class="relationBlock" id="btn_l">
+<dd><a href="javascript:updateManual()"><img src="./フロンティアモニター/images/manu_in.png" width="90" height="26"></a></dd>
+</dl>
 
-  <!-- 自給率メーターのみ -->
-  <div class="summary-bar">
-    <div class="summary-info">
-      <span class="material-symbols-rounded" style="color: #10b981; font-size: 20px;">eco</span>
-      <span class="summary-title">電力自給率</span>
-      <span class="summary-value" id="self-reliance-rate">0%</span>
-    </div>
-    <div class="progress-track">
-      <div class="progress-fill" id="self-reliance-bar"></div>
-    </div>
-  </div>
+<!-- 点滅画像 -->
+<span style="position:absolute; top:94px; left:4px;">
+ 	<img id="blinking" src="./フロンティアモニター/images/blink4moment.gif" width="247" height="48">
+</span>
 
-  <!-- 電力データカード -->
-  <div class="dashboard-grid">
-    <!-- 発電 -->
-    <div class="card card-solar">
-      <div class="card-header">
-        <div class="card-icon-wrap">
-          <span class="material-symbols-rounded">wb_sunny</span>
-        </div>
-        <div>
-          <div class="card-title">太陽光発電</div>
-          <div class="card-desc">リアルタイム発電電力</div>
-        </div>
-      </div>
-      <div class="card-body">
-        <span class="card-value" id="hatsudenkw">0.00</span>
-        <span class="card-unit">kW</span>
-      </div>
-    </div>
+<dl class="relationBlock" id="btn_r">
+<dd><a href="javascript: chgAutoRef();"><img id="btn_r_img" src="./フロンティアモニター/images/auto_on.png" width="90" height="26"></a></dd>
+</dl>
 
-    <!-- 消費 -->
-    <div class="card card-consume">
-      <div class="card-header">
-        <div class="card-icon-wrap">
-          <span class="material-symbols-rounded">home</span>
-        </div>
-        <div>
-          <div class="card-title">宅内消費電力</div>
-          <div class="card-desc">家全体の現在の消費</div>
-        </div>
-      </div>
-      <div class="card-body">
-        <span class="card-value" id="shohikw">0.00</span>
-        <span class="card-unit">kW</span>
-      </div>
-    </div>
+<dl class="relationBlock" id="rSell">
+<dd><span class="numTxt" id="kattakw">0.00</span>kW</dd>
+</dl>
 
-    <!-- 売電 -->
-    <div class="card card-sell">
-      <div class="card-header">
-        <div class="card-icon-wrap">
-          <span class="material-symbols-rounded">trending_up</span>
-        </div>
-        <div>
-          <div class="card-title">売電電力</div>
-          <div class="card-desc">電力会社へ売電中</div>
-        </div>
-      </div>
-      <div class="card-body">
-        <span class="card-value" id="uttakw">0.00</span>
-        <span class="card-unit">kW</span>
-      </div>
-    </div>
+<dl class="relationBlock" id="rBuy">
+<dd><span class="numTxt" id="hatsudenkw">0.00</span>kW</dd>
+</dl>
 
-    <!-- 買電 -->
-    <div class="card card-buy">
-      <div class="card-header">
-        <div class="card-icon-wrap">
-          <span class="material-symbols-rounded">trending_down</span>
-        </div>
-        <div>
-          <div class="card-title">買電電力</div>
-          <div class="card-desc">電力会社から購入中</div>
-        </div>
-      </div>
-      <div class="card-body">
-        <span class="card-value" id="kattakw">0.00</span>
-        <span class="card-unit">kW</span>
-      </div>
-    </div>
+<dl class="relationBlock" id="rEPG">
+<dd><span class="numTxt" id="uttakw">0.87</span>kW</dd>
+</dl>
 
-    <!-- 自家消費 -->
-    <div class="card card-use">
-      <div class="card-header">
-        <div class="card-icon-wrap">
-          <span class="material-symbols-rounded">recycling</span>
-        </div>
-        <div>
-          <div class="card-title">自家消費電力</div>
-          <div class="card-desc">発電電力の自己利用</div>
-        </div>
-      </div>
-      <div class="card-body">
-        <span class="card-value" id="shiyokw">0.00</span>
-        <span class="card-unit">kW</span>
-      </div>
-    </div>
-  </div>
+<dl class="relationBlock" id="rConsumption">
+<dd><span class="numTxt" id="shohikw">3.04</span>kW</dd>
+</dl>
 
-  <input type="hidden" id="autoRef" value="1">
-  <img id="blinking" src="" style="display:none;">
+<dl class="relationBlock" id="rUse">
+<dd><span class="numTxt" id="shiyokw">3.04</span>kW</dd>
+</dl>
+
+<center><p class="inputImage"><a href="javascript: close();"><img src="./フロンティアモニター/images/btn_close2.gif" width="90" height="26" alt="閉じる"></a></p></center>
+<input type="hidden" id="httpsurl" name="httpsurl" value="https://www.frontier-monitor.com/persite">
+<input type="hidden" id="actionId" name="actionId" value="">
+</form>
+</div>
+<div id="PopUpFooter">
+<p class="copyright"><font color="#FFFFFF">©SOLAR FRONTIER</font></p>
+</div>
 </div>
 
-<script>
-// ==================== データ通信 ====================
-var update;
-var sendErrorCount = 0;
-var isConnecting = 0;
-var urls = '192.168.1.7'.split(';');
-var timerID = null;
-
-$(function(){
-  update = function(status, target) {
-    if (target == null) target = 0;
-    var homeSvrUrl = urls[target];
-
-    if (!homeSvrUrl) {
-      doErr(target);
-      return;
-    } else {
-      homeSvrUrl = "http://" + homeSvrUrl + "/GetMonitoringData.cgi";
-    }
-
-    var now = new Date();
-    $.ajax({
-      type: 'POST',
-      url: homeSvrUrl,
-      timeout: 5000,
-      data: { "time": now.getTime() },
-      dataType: "jsonp",
-      jsonpCallback: "getAdded_Power",
-      success: function(data) {
-        doView(target, data);
-      },
-      error: function() {
-        doErr(target);
-      }
-    });
-  };
-
-  try {
-    isConnecting = 1;
-    update("load", 0);
-  } catch(e) {
-    doErr();
-  }
-});
-
-function doView(targetIndex, data) {
-  var hatsudenkw = data.added_power;
-  var uttakw = data.added_sellpower;
-  var kattakw = data.added_buypower;
-  var ZERO_FMT = "0.00";
-
-  var hatsuden = (hatsudenkw != "" && hatsudenkw != null) ? roundOff(hatsudenkw) : ZERO_FMT;
-  var utta = (uttakw != "" && uttakw != null) ? roundOff(uttakw) : ZERO_FMT;
-  var katta = (kattakw != "" && kattakw != null) ? roundOff(kattakw) : ZERO_FMT;
-
-  $("#hatsudenkw").html(hatsuden);
-  $("#uttakw").html(utta);
-  $("#kattakw").html(katta);
-
-  if (parseFloat(utta) > parseFloat(katta)) {
-    $("#sell-badge").css('display', 'flex');
-  } else {
-    $("#sell-badge").hide();
-  }
-
-  var shohikwVal = 0;
-  if (parseFloat(hatsuden) === 0 && parseFloat(utta) === 0 && parseFloat(katta) === 0) {
-    $("#shohikw").html(ZERO_FMT);
-  } else {
-    shohikwVal = syohi(hatsudenkw || 0, uttakw || 0, kattakw || 0);
-    $("#shohikw").html(shohikwVal);
-  }
-
-  var shiyokwVal = 0;
-  if ((data.added_power == "" || data.added_power == null) && (data.added_sellpower == "" || data.added_sellpower == null)) {
-    $("#shiyokw").html(ZERO_FMT);
-  } else {
-    shiyokwVal = shiyo(hatsudenkw || 0, uttakw || 0);
-    $("#shiyokw").html(shiyokwVal);
-  }
-
-  // 自給率計算
-  var sVal = parseFloat(shohikwVal);
-  var uVal = parseFloat(shiyokwVal);
-  var rate = 0;
-  if (sVal > 0) {
-    rate = Math.min(100, Math.round((uVal / sVal) * 100));
-  }
-  $("#self-reliance-rate").text(rate + "%");
-  $("#self-reliance-bar").css("width", rate + "%");
-
-  if ($("#autoRef").val() == "1") {
-    clearTimeout(timerID);
-    timerID = setTimeout(function(){ update("auto", 0); }, 3000);
-  }
-  isConnecting = 0;
-}
-
-function syohi(hatsudenkw, uttakw, kattakw) {
-  var syohi = parseFloat(hatsudenkw) - parseFloat(uttakw) + parseFloat(kattakw);
-  return roundOff(syohi);
-}
-
-function shiyo(hatsudenkw, uttakw) {
-  var shiyo = parseFloat(hatsudenkw) - parseFloat(uttakw);
-  return roundOff(shiyo);
-}
-
-function doErr(targetIndex) {
-  $("#hatsudenkw, #uttakw, #kattakw, #shohikw, #shiyokw").html("－");
-
-  targetIndex++;
-  if (targetIndex < urls.length) {
-    update("retry", targetIndex);
-    return;
-  }
-
-  if ($("#autoRef").val() == "1") {
-    sendErrorCount++;
-    if (sendErrorCount < 3) {
-      setTimeout(function(){ update("retry", 0); }, 2000);
-      return;
-    } else {
-      chgAutoRef();
-    }
-  }
-  isConnecting = 0;
-}
-
-function roundOff(n) {
-  var val = (new Number(n) * 100) / 1000;
-  val = Math.round(val) / 100;
-  return val.toFixed(2);
-}
-
-function chgAutoRef() {
-  if ($("#autoRef").val() == "1") {
-    $("#autoRef").val("0");
-    $("#auto-btn").removeClass("active");
-    clearTimeout(timerID);
-  } else {
-    $("#autoRef").val("1");
-    $("#auto-btn").addClass("active");
-    if (isConnecting == 0) {
-      isConnecting = 1;
-      sendErrorCount = 0;
-      update('autoon', 0);
-    }
-  }
-}
-
-function updateManual() {
-  if (isConnecting == 0) {
-    isConnecting = 1;
-    update('manual', 0);
-  }
-}
-
-// ==================== PIN認証 ====================
-var enteredPin = "";
-var MAX_PIN_LEN = 4;
-var CORRECT_PIN = "8004";
+<script type="text/javascript">
+// ===== ロック画面・PIN認証ロジック =====
+var inputPin = "";
+var TARGET_PIN = "8004";
 
 function getTodayKey() {
   var d = new Date();
@@ -872,100 +515,95 @@ function checkDailyLimit() {
 
 function lockErrorMode() {
   document.getElementById('day-error').style.display = "block";
-  document.getElementById('login-card').classList.add("lock-red");
-  document.querySelectorAll('.num-btn').forEach(function(btn){ btn.disabled = true; });
+  document.getElementById('login-card').className = "login-card lock-red";
+  var btns = document.getElementsByClassName('key-btn');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].disabled = true;
+  }
 }
 
-function updateDots() {
-  for (var i = 0; i < MAX_PIN_LEN; i++) {
-    var dot = document.getElementById('dot-' + i);
-    if (i < enteredPin.length) {
-      dot.classList.add('filled');
+function renderDots() {
+  for (var i = 0; i < 4; i++) {
+    var dot = document.getElementById('pdot-' + i);
+    if (i < inputPin.length) {
+      dot.className = "pass-dot filled";
     } else {
-      dot.classList.remove('filled');
+      dot.className = "pass-dot";
     }
   }
 }
 
-function pressKey(num) {
-  if (checkDailyLimit() || enteredPin.length >= MAX_PIN_LEN) return;
-  enteredPin += num;
-  updateDots();
+function addPin(n) {
+  if (checkDailyLimit() || inputPin.length >= 4) return;
+  inputPin += n;
+  renderDots();
 
-  if (enteredPin.length === MAX_PIN_LEN) {
-    setTimeout(verifyPin, 100);
+  if (inputPin.length === 4) {
+    setTimeout(verifyCode, 100);
   }
 }
 
-function deletePin() {
-  if (enteredPin.length > 0) {
-    enteredPin = enteredPin.slice(0, -1);
-    updateDots();
+function delPin() {
+  if (inputPin.length > 0) {
+    inputPin = inputPin.substring(0, inputPin.length - 1);
+    renderDots();
   }
 }
 
 function clearPin() {
-  enteredPin = "";
-  updateDots();
+  inputPin = "";
+  renderDots();
 }
 
-function verifyPin() {
-  if (enteredPin === CORRECT_PIN) {
+function verifyCode() {
+  if (inputPin === TARGET_PIN) {
     if (document.getElementById('persist-auth').checked) {
       var expiryTime = new Date().getTime() + (24 * 60 * 60 * 1000);
       localStorage.setItem('auth_expiry', expiryTime);
     }
-    showMainScreen();
+    unlock();
   } else {
     var count = addFailCount();
-    for (var i = 0; i < MAX_PIN_LEN; i++) {
-      document.getElementById('dot-' + i).classList.add('error');
+    for (var i = 0; i < 4; i++) {
+      document.getElementById('pdot-' + i).className = "pass-dot error";
     }
     setTimeout(function() {
       clearPin();
-      for (var i = 0; i < MAX_PIN_LEN; i++) {
-        document.getElementById('dot-' + i).classList.remove('error');
+      if (count >= 5) {
+        lockErrorMode();
       }
-      if (count >= 5) lockErrorMode();
     }, 400);
   }
 }
 
-// 物理キーボード / リモコンキー対応
-window.addEventListener('keydown', function(e) {
+function unlock() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('Container2').style.display = 'block';
+  // モニター通信開始
+  startMonitoring();
+}
+
+// 物理キーボード / リモコン数字キー対応
+window.onkeydown = function(e) {
   if (document.getElementById('login-screen').style.display === 'none') return;
-  if (e.key >= '0' && e.key <= '9') {
-    pressKey(e.key);
-  } else if (e.key === 'Backspace') {
-    deletePin();
-  } else if (e.key === 'Escape') {
-    clearPin();
+  var key = e.key || String.fromCharCode(e.keyCode);
+  if (key >= '0' && key <= '9') {
+    addPin(key);
+  } else if (e.keyCode === 8) { // Backspace
+    delPin();
   }
-});
+};
 
-function showMainScreen() {
-  var screen = document.getElementById('login-screen');
-  screen.style.display = 'none';
-  document.getElementById('protected-content').style.display = 'flex';
-}
-
-// 右上の「ロックする」ボタン処理
-function manualLock() {
-  localStorage.removeItem('auth_expiry');
-  clearPin();
-  document.getElementById('protected-content').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-}
-
-window.addEventListener('DOMContentLoaded', function() {
+// 起動時チェック
+window.onload = function() {
   var expiry = localStorage.getItem('auth_expiry');
   if (expiry && new Date().getTime() < parseInt(expiry)) {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('protected-content').style.display = 'flex';
+    unlock();
     return;
   }
   checkDailyLimit();
-});
+};
 </script>
+
 </body>
 </html>
